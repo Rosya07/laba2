@@ -17,4 +17,5 @@ struct GameState {
     Turn turn = Turn::Player;
     bool gameOver = false;
     bool playerWon = false;
+    float enemyTimer = 0.0f;
 };
