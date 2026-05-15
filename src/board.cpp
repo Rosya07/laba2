@@ -18,11 +18,15 @@ bool CanPlaceShip(const Board& b, Point s, int len, bool h) {
         int nx=s.x+(h?i:0);
         int ny=s.y+(h?0:i);
         if(!InBounds(nx,ny)) return false;
-        for(int yy=ny-1;yy<=ny+1;yy++)
-            for(int xx=nx-1;xx<=nx+1;xx++)
+
+        for(int dy = -1; dy <= 1;dy++){
+            for(int dx = -1;dx <= 1;dx++){
+                int xx = nx + dx,yy = ny + dy;
                 if(InBounds(xx,yy)&&b[yy][xx]==Cell::Ship)
                     return false;
-    }
+            }
+        }
+    }       
     return true;
 }
 
@@ -52,47 +56,11 @@ void PlaceShipsRandom(Board& b, std::mt19937& rng){
     }
 }
 
-#include <vector>
-
-static bool IsSank(const Board& board,
-                 int x,
-                 int y,
-                 std::vector<std::vector<bool>>& visited)
-{
-    if (!InBounds(x, y))
-        return true;
-
-    if (visited[y][x])
-        return true;
-
-    if (board[y][x] != Cell::Hit && board[y][x] != Cell::Ship)
-        return true;
-
-    visited[y][x] = true;
-
-    if (board[y][x] == Cell::Ship)
-        return false;
-
-    return IsSank(board, x + 1, y, visited) &&
-           IsSank(board, x - 1, y, visited) &&
-           IsSank(board, x, y + 1, visited) &&
-           IsSank(board, x, y - 1, visited);
-}
-
-void CollectShip(const Board& board,
-                 int x,
-                 int y,
+void CollectShipCells(const Board& board,int x,int y,
                  std::vector<std::vector<bool>>& visited,
-                 std::vector<Point>& ship)
-{
-    if (!InBounds(x, y))
-        return;
-
-    if (visited[y][x])
-        return;
-
-    if (board[y][x] != Cell::Hit && board[y][x] != Cell::Ship)
-        return;
+                 std::vector<Point>& ship){
+    if (!InBounds(x, y)) || visited[y][x]) return;
+    if (board[y][x] != Cell::Ship && board[y][x] != Cell::Hit) return;
 
     visited[y][x] = true;
     ship.push_back({x, y});
@@ -103,50 +71,31 @@ void CollectShip(const Board& board,
     CollectShip(board, x, y - 1, visited, ship);
 }
 
-bool ShipHasAlive(const Board& board, const std::vector<Point>& ship)
-{
-    for (auto p : ship)
-    {
-        if (board[p.y][p.x] == Cell::Ship)
-            return true;
+bool IsShipSunk(const Board& board, Point hitPoint ){
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            int nx = hitPoint.x + dx, ny = hitPoint.y + dy;
+            if (InBounds(nx, ny) && board[ny][nx] == Cell::Ship) {
+                return false;
+            }
+        }
     }
-    return false;
-}   
+    return true;
+}
 
-void MarkSunkShip(Board& board, Point hitPoint)
-{
-    if (!InBounds(hitPoint.x, hitPoint.y))
-        return;
+void MarkSunkShip(Board& board, Point hitPoint){
+    if (!InBounds(hitPoint.x, hitPoint.y)) return;
+    if (board[hitPoint.y][hitPoint.x] != Cell::Hit) return;
 
-    if (board[hitPoint.y][hitPoint.x] != Cell::Hit)
-        return;
-
-    std::vector<std::vector<bool>> visited(
-        BOARD_SIZE,
-        std::vector<bool>(BOARD_SIZE, false)
-    );
-
+    std::vector<std::vector<bool>> visited(BOARD_SIZE,std::vector<bool>(BOARD_SIZE, false));
     std::vector<Point> ship;
+    CollectShipCells(board, hitPoint.x, hitPoint.y, visited, ship);
 
-    CollectShip(board, hitPoint.x, hitPoint.y, visited, ship);
-
-    if (ShipHasAlive(board, ship))
-        return;
-
-    for (auto p : ship)
-    {
-        for (int dy = -1; dy <= 1; dy++)
-        {
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                int nx = p.x + dx;
-                int ny = p.y + dy;
-
-                if (!InBounds(nx, ny))
-                    continue;
-
-                if (board[ny][nx] == Cell::Empty)
-                {
+    for (auto p : ship){
+        for (int dy = -1; dy <= 1; dy++){
+            for (int dx = -1; dx <= 1; dx++){
+                int nx = p.x + dx, ny = p.y + dy;
+                if (!InBounds(nx, ny) && board[ny][nx] == Cell::Empty){
                     board[ny][nx] = Cell::Miss;
                 }
             }
@@ -158,16 +107,16 @@ Result Shoot(Board& b, Point p){
     if(!InBounds(p.x,p.y)) return Result::Invalid;
     auto& c=b[p.y][p.x];
     if(IsAlreadyShot(c)) return Result::Invalid;
+    
     if (c==Cell::Ship){
         c=Cell::Hit;
-        std::vector<std::vector<bool>> visited(BOARD_SIZE, std::vector<bool>(BOARD_SIZE, false));
-        if (IsSank(b, p.x, p.y, visited))
-        {
+        if (IsShipSunk(b,p)){
             MarkSunkShip(b, p);
             return Result::Sink;
         }
         return Result::Hit;
     }
+
     c=Cell::Miss;
     return Result::Miss;
 }
