@@ -12,3 +12,5 @@ void PlaceShipsRandom(Board&, std::mt19937&);
 
 Result Shoot(Board&, Point);
 int CountAliveDecks(const Board&);
+void CollectShipCells(const Board&, int, int, std::vector<std::vector<bool>>&, std::vector<Point>&);
+bool IsShipSunk(const Board&, Point);
