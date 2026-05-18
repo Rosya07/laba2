@@ -2,6 +2,7 @@
 #include "board.h"
 #include "raylib.h"
 #include <algorithm>
+#include <vector>
 
 constexpr int CELL = 32;
 constexpr int PX = 160;
@@ -64,8 +65,8 @@ static void DrawFleetPanel(const Board& b, int x, int y){
 
     for (const auto& ship : ships){
         Color color = IsShipSunkInPanel(b,ship) ? RED : DARKPURPLE;
-        for (int i = 0; i < (int)ship.size(); i++){
-            int cellX = x + i * (mini + 4);
+        for (size_t i = 0; i < ship.size(); i++){
+            int cellX = x + static_cast<int>(i)* (mini + 4);
             DrawRectangle(cellX, rowY, mini, mini, color);
             DrawRectangleLines(cellX, rowY, mini, mini, BLACK);
         }
