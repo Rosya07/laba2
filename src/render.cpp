@@ -41,7 +41,6 @@ static std::vector<std::vector<Point>> GetShipsCells(const Board& b) {
         }
     }
     
-    // Сортируем по размеру (от большего к меньшему)
     std::sort(ships.begin(), ships.end(),
         [](const std::vector<Point>& a, const std::vector<Point>& b) {
             return a.size() > b.size();
