@@ -59,16 +59,17 @@ void PlaceShipsRandom(Board& b, std::mt19937& rng){
 void CollectShipCells(const Board& board,int x,int y,
                  std::vector<std::vector<bool>>& visited,
                  std::vector<Point>& ship){
-    if (!InBounds(x, y)) || visited[y][x]) return;
+    if (!InBounds(x, y));
+    if (visited[y][x]) return;
     if (board[y][x] != Cell::Ship && board[y][x] != Cell::Hit) return;
 
     visited[y][x] = true;
     ship.push_back({x, y});
 
-    CollectShip(board, x + 1, y, visited, ship);
-    CollectShip(board, x - 1, y, visited, ship);
-    CollectShip(board, x, y + 1, visited, ship);
-    CollectShip(board, x, y - 1, visited, ship);
+    CollectShipCells(board, x + 1, y, visited, ship);
+    CollectShipCells(board, x - 1, y, visited, ship);
+    CollectShipCells(board, x, y + 1, visited, ship);
+    CollectShipCells(board, x, y - 1, visited, ship);
 }
 
 bool IsShipSunk(const Board& board, Point hitPoint ){
